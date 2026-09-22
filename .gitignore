@@ -10,3 +10,4 @@ scratch/
 *.csv
 __pycache__/
 *.pyc
+/.vs/*
