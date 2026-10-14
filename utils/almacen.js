@@ -117,22 +117,31 @@ function filterLotsWithStock(movesList, productoId, tamano = null) {
  * Normaliza el payload de movimientos de almacén, soportando tanto formato
  * multi-ítem (`body.items`) como formato legado de ítem individual en la raíz.
  * @param {Object} body - Payload de la solicitud
- * @returns {Array<{ producto_id: number, lote: string, tamano: string|null, cantidad: number, precio_venta: number, categoria: string }>}
+ * @returns {Array<{ producto_id: number, lote: string, tamano: string|null, cantidad: number, precio_venta: number, categoria: string, ciclo_agricola: string|null }>}
  */
 function normalizeMovementItems(body = {}) {
+  const resolveCiclo = (raw) => {
+    if (raw === null || raw === undefined) return null;
+    const str = String(raw).trim();
+    return str.length > 0 ? str : null;
+  };
+
   if (Array.isArray(body.items) && body.items.length > 0) {
     return body.items.map(item => {
       const isSalida = String(body.tipo || body.tipo_movimiento || item.tipo || '').toLowerCase().includes('salida');
       const qty = Number(item.cantidad || (isSalida ? item.cantidad_saliente : item.cantidad_entrante)) || 0.0;
       const rawCat = String(item.categoria || body.categoria || 'Agroquímicos').trim();
       const isSeed = rawCat.toLowerCase().includes('semilla') || rawCat.toLowerCase().includes('híbrido') || rawCat.toLowerCase().includes('hibrido');
+      const rawCiclo = item.ciclo !== undefined ? item.ciclo : (item.ciclo_agricola !== undefined ? item.ciclo_agricola : (body.ciclo !== undefined ? body.ciclo : body.ciclo_agricola));
+
       return {
         producto_id: Number(item.producto_id),
         lote: String(item.lote || '').trim(),
         tamano: item.tamano ? String(item.tamano).trim() : null,
         cantidad: qty,
         precio_venta: Number(item.precio_venta) || 0.0,
-        categoria: isSeed ? 'Semilla' : rawCat
+        categoria: isSeed ? 'Semilla' : rawCat,
+        ciclo_agricola: resolveCiclo(rawCiclo)
       };
     });
   }
@@ -148,6 +157,7 @@ function normalizeMovementItems(body = {}) {
 
   const rawCat = String(body.categoria || 'Agroquímicos').trim();
   const isSeed = rawCat.toLowerCase().includes('semilla') || rawCat.toLowerCase().includes('híbrido') || rawCat.toLowerCase().includes('hibrido');
+  const rawCiclo = body.ciclo !== undefined ? body.ciclo : body.ciclo_agricola;
 
   return [{
     producto_id: prodId,
@@ -155,7 +165,8 @@ function normalizeMovementItems(body = {}) {
     tamano: body.tamano ? String(body.tamano).trim() : null,
     cantidad: qty,
     precio_venta: Number(body.precio_venta) || 0.0,
-    categoria: isSeed ? 'Semilla' : rawCat
+    categoria: isSeed ? 'Semilla' : rawCat,
+    ciclo_agricola: resolveCiclo(rawCiclo)
   }];
 }
 
@@ -271,11 +282,92 @@ function buildWarehouseMovementsQuery(query = {}) {
   return { sql, params, whereClause, conditions };
 }
 
+/**
+ * Agrupa movimientos por producto y desglosa sus lotes con existencias disponibles (> 0).
+ * @param {Array<Object>} products - Lista de productos activos
+ * @param {Array<Object>} movesList - Lista de movimientos de almacén
+ * @returns {Array<{ id: number, producto: string, tipo_categoria: string, existencias: number, lotes: Array<{ lote: string, tamano: string|null, stock: number }> }>}
+ */
+function aggregateProductLotsStock(products = [], movesList = []) {
+  if (!Array.isArray(products)) return [];
+  const moves = Array.isArray(movesList) ? movesList : [];
+
+  const productMap = new Map();
+  for (const p of products) {
+    productMap.set(Number(p.id), {
+      id: Number(p.id),
+      producto: p.producto,
+      tipo_categoria: p.tipo_categoria,
+      activo: p.activo !== undefined ? p.activo : 1,
+      existencias: 0.0,
+      lotesMap: new Map()
+    });
+  }
+
+  for (const m of moves) {
+    const prodId = Number(m.producto_id);
+    let prodEntry = productMap.get(prodId);
+    if (!prodEntry) {
+      prodEntry = {
+        id: prodId,
+        producto: m.producto_nombre || `Producto ${prodId}`,
+        tipo_categoria: m.categoria || m.tipo_categoria || '-',
+        activo: 1,
+        existencias: 0.0,
+        lotesMap: new Map()
+      };
+      productMap.set(prodId, prodEntry);
+    }
+
+    const rawLote = m.lote ? String(m.lote).trim() : null;
+    const rawTamano = m.tamano ? String(m.tamano).trim() : null;
+    const ent = Number(m.cantidad_entrante || 0);
+    const sal = Number(m.cantidad_saliente || 0);
+    const net = ent - sal;
+
+    if (rawLote) {
+      const lotKey = `${rawLote.toUpperCase()}__${(rawTamano || '').toUpperCase()}`;
+      if (!prodEntry.lotesMap.has(lotKey)) {
+        prodEntry.lotesMap.set(lotKey, {
+          lote: rawLote,
+          tamano: rawTamano,
+          stock: 0.0
+        });
+      }
+      prodEntry.lotesMap.get(lotKey).stock += net;
+    }
+  }
+
+  const results = [];
+  for (const p of productMap.values()) {
+    const activeLots = [];
+    let totalStock = 0.0;
+    for (const l of p.lotesMap.values()) {
+      l.stock = Math.round(l.stock * 1000) / 1000;
+      if (l.stock > 0) {
+        activeLots.push({
+          lote: l.lote,
+          tamano: l.tamano,
+          stock: l.stock
+        });
+        totalStock += l.stock;
+      }
+    }
+    p.existencias = Math.round(totalStock * 1000) / 1000;
+    p.lotes = activeLots;
+    delete p.lotesMap;
+    results.push(p);
+  }
+
+  return results;
+}
+
 module.exports = {
   calculateLotStock,
   validateLotSalida,
   filterLotsWithStock,
   normalizeMovementItems,
   validateMultiItemSalida,
-  buildWarehouseMovementsQuery
+  buildWarehouseMovementsQuery,
+  aggregateProductLotsStock
 };

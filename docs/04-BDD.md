@@ -793,3 +793,24 @@ And la interfaz despliega el selector con la lista completa de asesores
 - **Entonces** todos los híbridos cuentan con el catálogo completo de 10 calibres oficiales (`BT1, BT2, BT3, BW1, BW2, PT1, PT2, PT3, PW1, PW2`)
 - **Y** el producto `MURALLA MAX 250ML` está clasificado correctamente como `Agroquímicos`, impidiendo que el sistema exija calibres de semilla para este insumo.
 
+## Escenarios BDD del Incremento CHG-024
+
+### BDD-SC-093 — Captura manual de Ciclo en partida de salida y persistencia en base de datos
+- **Dado** un usuario con rol autorizado de almacén en el formulario de registro de Salidas
+- **Cuando** agrega una partida de producto capturando lote, cantidad y el campo manual `Ciclo` (ej. "O-I 2026")
+- **Entonces** la solicitud se envía y procesa atómicamente por el backend
+- **Y** la fila insertada en `almacen_movimientos` contiene el valor de `ciclo_agricola` correspondiente.
+
+### BDD-SC-094 — Proyección del Ciclo en Kardex y Exportación Excel (CSV) / PDF
+- **Dado** movimientos de almacén registrados con su respectivo ciclo agrícola
+- **Cuando** el usuario consulta el Kardex de Movimientos o hace clic en "Excel (CSV)" o "PDF"
+- **Entonces** la tabla de Kardex muestra el ciclo asociado al movimiento
+- **Y** el archivo CSV descargado contiene la columna "Ciclo" con su valor para cada partida.
+
+### BDD-SC-095 — Desglose de existencias físicas por lote en la vista de Almacén
+- **Dado** un inventario donde un producto ("Hipopótamo") tiene saldo total de 150.000 conformado por múltiples lotes (Lote X: 90.000, Lote Y: 20.000, Lote Z: 40.000)
+- **Cuando** el usuario consulta la pestaña "Existencias Físicas"
+- **Entonces** la tabla de inventario muestra el total consolidado del producto (150.000)
+- **Y** presenta directamente el desglose de cada uno de sus lotes activos con sus respectivas existencias.
+
+

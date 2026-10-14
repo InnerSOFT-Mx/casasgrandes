@@ -481,3 +481,30 @@ Criterio de aceptación:
 - **Criterios de Aceptación**:
   - Ningún control interactivo de mutación está presente en la vista del Observador.
   - Cualquier petición HTTP mutativa sobre planificación enviada con un token de `Observador` es bloqueada con HTTP 403 Forbidden.
+
+## Requisitos del Incremento CHG-024 (Ciclos Manuales en Salidas y Desglose de Existencias por Lote)
+
+### PRD-FR-052 — Captura Manual de Ciclo en Salidas de Almacén y Reflejo en Kardex y Excel (CSV)
+
+- **Descripción**: Cada partida en el registro de salidas de almacén debe permitir la captura de un campo de texto libre denominado `Ciclo` (ubicado a la derecha de *Precio Venta Unitario* en el formulario de la partida). Dicho dato debe persistirse en la base de datos y proyectarse en el Kardex de movimientos, así como en las exportaciones a CSV (Excel) y PDF.
+- **Regla de Negocio**:
+  - El campo `Ciclo` es de entrada manual (no restringido a un catálogo cerrado).
+  - Si el usuario no captura nada o deja espacios en blanco, se almacena como `NULL` o cadena vacía sin bloquear el guardado.
+  - La tabla `almacen_movimientos` persiste el valor en la columna `ciclo_agricola`.
+  - La exportación a Excel (CSV) y PDF debe contener el encabezado `Ciclo` y su valor correspondiente para cada movimiento.
+- **Criterios de Aceptación**:
+  - El formulario de partidas de salida incluye el campo de texto manual `Ciclo` junto a `Precio Venta Unitario`.
+  - Al enviar una salida con `Ciclo: "O-I 2026"`, el movimiento persiste `ciclo_agricola = "O-I 2026"`.
+  - El archivo CSV de descarga incluye la columna `Ciclo` con el valor capturado.
+
+### PRD-FR-053 — Desglose de Existencias Físicas por Lotes en el Inventario de Almacén
+
+- **Descripción**: En la vista de Existencias Físicas (`#panel-existencias`), cada producto que cuente con existencias físicas disponibles debe mostrar el desglose de los lotes activos que conforman dicho total y la cantidad correspondiente a cada uno.
+- **Regla de Negocio**:
+  - Si un producto tiene saldo cero (`0.000`), muestra su estado `Sin Stock` sin desglose de lotes.
+  - Si un producto tiene saldo positivo (`> 0`), debajo de la fila del producto se listan los lotes con existencia $> 0$ y su cantidad (ej. `Lote X: 90.000`, `Lote Y: 20.000`).
+  - La suma de las cantidades de los lotes individuales debe ser consistente y coincidir con las existencias totales del producto.
+- **Criterios de Aceptación**:
+  - La consulta a `/api/almacen/existencias` entrega la estructura de existencias totales y el desglose de lotes activos por producto.
+  - En el DOM de `#stock-tbody`, para productos con existencias se renderiza el desglose visual de lotes y sus respectivas cantidades.
+

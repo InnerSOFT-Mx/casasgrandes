@@ -283,3 +283,15 @@
 - Componentes cubiertos: SDD-CMP-046, SDD-CMP-047.
 - Escenarios BDD: BDD-SC-084, BDD-SC-085, BDD-SC-086, BDD-SC-087, BDD-SC-088.
 - Casos TDD: TDD-TC-100, TDD-TC-101, TDD-TC-102.
+
+## EVD-022 — Evidencia local CHG-024
+
+- Fecha: 2026-10-14.
+- Calibración: Riesgo R2 (Ciclos manuales en salidas de almacén y desglose de existencias por lote).
+- Requisitos cubiertos: PRD-FR-052, PRD-FR-053.
+- Escenarios BDD: BDD-SC-093, BDD-SC-094, BDD-SC-095.
+- Casos TDD: TDD-TC-107, TDD-TC-108, TDD-TC-109.
+- Fase Roja: `node --test test/chg024_almacen_ciclos_lotes.test.js`, exit 1.
+- Fase Verde: `node --test test/chg024_almacen_ciclos_lotes.test.js`, exit 0, 3/3 aprobadas.
+- Regresión completa: `npm test`, exit 0, 141/141 pruebas aprobadas (0 fallos).
+

@@ -1690,6 +1690,36 @@ app.get('/api/almacen/existencias', authenticateToken, async (req, res) => {
       WHERE p.activo = 1
       ORDER BY p.producto ASC
     `);
+
+    // Obtener desglose de lotes activos con saldo > 0 por producto
+    const lotsRows = await db.all(`
+      SELECT producto_id, lote, tamano,
+             (SUM(COALESCE(cantidad_entrante, 0)) - SUM(COALESCE(cantidad_saliente, 0))) AS stock
+      FROM almacen_movimientos
+      WHERE lote IS NOT NULL AND TRIM(lote) <> ''
+      GROUP BY producto_id, lote, tamano
+      HAVING (SUM(COALESCE(cantidad_entrante, 0)) - SUM(COALESCE(cantidad_saliente, 0))) > 0
+      ORDER BY lote ASC
+    `);
+
+    const lotsByProduct = new Map();
+    for (const row of lotsRows) {
+      const prodId = Number(row.producto_id);
+      if (!lotsByProduct.has(prodId)) {
+        lotsByProduct.set(prodId, []);
+      }
+      lotsByProduct.get(prodId).push({
+        lote: row.lote,
+        tamano: row.tamano,
+        stock: Math.round((Number(row.stock) || 0) * 1000) / 1000
+      });
+    }
+
+    for (const item of existencias) {
+      item.existencias = Math.round((Number(item.existencias) || 0) * 1000) / 1000;
+      item.lotes = lotsByProduct.get(Number(item.id)) || [];
+    }
+
     res.json(existencias);
   } catch (err) {
     console.error('Error fetching stock existencias:', err);
@@ -2022,9 +2052,10 @@ app.post('/api/almacen/movimientos', authenticateToken, async (req, res) => {
             referencia_factura, 
             asesor_id,
             cliente_id,
-            notas
+            notas,
+            ciclo_agricola
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           dateVal,
           fullTipoMovimiento,
@@ -2043,7 +2074,8 @@ app.post('/api/almacen/movimientos', authenticateToken, async (req, res) => {
           referencia_factura || numero_movimiento || null,
           asesor_id || req.user.id,
           cliente_id || null,
-          notas || null
+          notas || null,
+          item.ciclo_agricola || null
         ]);
       }
 

@@ -632,3 +632,31 @@
   3. `getSizesForProduct` devuelve los 10 calibres para `A-7573 ACCELERON` y `A-7573 PONCHO`.
 - Estado: passed-local
 
+## TDD-TC-107 — Normalización y persistencia de ciclo manual en movimientos de almacén
+
+- Cubre: BDD-SC-093, PRD-FR-052
+- Aserciones:
+  1. `normalizeMovementItems` extrae `ciclo` / `ciclo_agricola` de las partidas tanto en payload multi-ítem como legado.
+  2. Al recibir un texto manual de ciclo (ej. "O-I 2026"), se limpia y normaliza como string no vacío.
+  3. Si el ciclo no se proporciona, se normaliza como null.
+- Estado: passed-local
+
+## TDD-TC-108 — Desglose y agregación determinista de existencias físicas por lote por producto
+
+- Cubre: BDD-SC-095, PRD-FR-053
+- Aserciones:
+  1. La función de agregación agrupa movimientos de inventario por producto y desglosa lotes con saldo neto $> 0$.
+  2. Para un producto como "Hipopótamo" con 150.000 dividido en Lote X (90.000), Lote Y (20.000) y Lote Z (40.000), genera la estructura correcta con `totalStock = 150.000` y el array de lotes.
+  3. Los lotes agotados (saldo 0 o menor) se excluyen del desglose activo.
+- Estado: passed-local
+
+## TDD-TC-109 — Integración de interfaz y exportación CSV con ciclo y desglose visual de lotes
+
+- Cubre: BDD-SC-094, BDD-SC-095, PRD-FR-052, PRD-FR-053
+- Aserciones:
+  1. `exportKardexToCSV` genera la cabecera "Ciclo" y proyecta el valor `ciclo_agricola` en las filas exportadas.
+  2. `addWarehouseMovementItem` genera el input `.move-item-ciclo` en la misma fila junto a `.move-item-precio`.
+  3. La tabla de existencias genera la fila secundaria con `.lot-breakdown-row` para productos con saldo positivo.
+- Estado: passed-local
+
+

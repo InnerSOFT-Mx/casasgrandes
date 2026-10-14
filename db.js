@@ -84,6 +84,7 @@ async function initSchema() {
     await pool.query('ALTER TABLE almacen_movimientos ADD COLUMN IF NOT EXISTS precio_venta REAL DEFAULT 0.0');
     await pool.query('ALTER TABLE almacen_movimientos ADD COLUMN IF NOT EXISTS proveedor_cliente TEXT');
     await pool.query('ALTER TABLE almacen_movimientos ADD COLUMN IF NOT EXISTS cliente_id INTEGER REFERENCES clientes(id)');
+    await pool.query('ALTER TABLE almacen_movimientos ADD COLUMN IF NOT EXISTS ciclo_agricola TEXT');
     await pool.query(`
       UPDATE almacen_movimientos 
       SET categoria = 'Semilla' 
@@ -124,6 +125,7 @@ async function initSchema() {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_almacen_mov_prod ON almacen_movimientos (producto_id, id DESC)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_almacen_mov_cli ON almacen_movimientos (cliente_id) WHERE cliente_id IS NOT NULL');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_almacen_mov_cot ON almacen_movimientos (cotizacion_id) WHERE cotizacion_id IS NOT NULL');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_almacen_mov_ciclo ON almacen_movimientos (ciclo_agricola) WHERE ciclo_agricola IS NOT NULL');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS cotizacion_adjuntos (
         id SERIAL PRIMARY KEY,

@@ -3315,9 +3315,15 @@ function addWarehouseMovementItem() {
       </div>
     </div>
 
-    <div class="form-group move-item-precio-group" style="${isSalida ? 'display: block;' : 'display: none;'} margin-bottom: 0;">
-      <label style="font-size: 12px; margin-bottom: 4px;">Precio Venta Unitario (MXN)</label>
-      <input type="number" step="any" min="0" class="form-input move-item-precio" placeholder="0.00">
+    <div class="move-item-bottom-grid" style="${isSalida ? 'display: grid;' : 'display: none;'} grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0;">
+      <div class="form-group move-item-precio-group" style="margin-bottom: 0;">
+        <label style="font-size: 12px; margin-bottom: 4px;">Precio Venta Unitario (MXN)</label>
+        <input type="number" step="any" min="0" class="form-input move-item-precio" placeholder="0.00">
+      </div>
+      <div class="form-group move-item-ciclo-group" style="margin-bottom: 0;">
+        <label style="font-size: 12px; margin-bottom: 4px;">Ciclo (Manual)</label>
+        <input type="text" class="form-input move-item-ciclo" placeholder="Ej. O-I 2026">
+      </div>
     </div>
   `;
 
@@ -3554,11 +3560,13 @@ function setupWarehouseFormHandlers() {
       labelProveedor.textContent = 'Proveedor o Cliente';
     }
 
-    // Update item rows for salida vs entrada (lots and price)
+    // Update item rows for salida vs entrada (lots, price and ciclo)
     document.querySelectorAll('#movement-items-list .movement-item-row').forEach(row => {
       const isSalida = op === 'Salida';
+      const bottomGrid = row.querySelector('.move-item-bottom-grid');
+      if (bottomGrid) bottomGrid.style.display = isSalida ? 'grid' : 'none';
       const precioGroup = row.querySelector('.move-item-precio-group');
-      if (precioGroup) precioGroup.style.display = isSalida ? 'block' : 'none';
+      if (precioGroup && !bottomGrid) precioGroup.style.display = isSalida ? 'block' : 'none';
       updateMovementItemLots(row);
     });
   };
@@ -3973,6 +3981,7 @@ function renderWarehouseMovements(movements) {
       if (m.cliente_nombre) contactDetails += `<span>Cliente: ${escapeHtml(m.cliente_nombre)}</span>`;
       if (m.asesor_nombre) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; color: var(--text-light);">Asesor: ${escapeHtml(m.asesor_nombre)}</span>`;
       if (m.numero_remision) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; color: var(--primary);">Remisión: ${escapeHtml(m.numero_remision)}</span>`;
+      if (m.ciclo_agricola) contactDetails += `<span style="font-size: 11px; color: var(--text-dark); background: #e0f2fe; padding: 1px 5px; border-radius: 4px; margin-left: 4px; font-weight: 600;">Ciclo: ${escapeHtml(m.ciclo_agricola)}</span>`;
       if (m.opcion_operacion) contactDetails += `<span style="font-size: 11px; color: var(--text-light); margin-left: 4px;">(${escapeHtml(m.opcion_operacion)})</span>`;
       if (m.precio_venta > 0) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; font-weight: 600;">$${Number(m.precio_venta).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>`;
     }
@@ -4095,13 +4104,34 @@ async function loadAlmacenData() {
           const prodName = escapeHtml(s.producto || 'Sin Nombre');
           const catName = escapeHtml(s.tipo_categoria || '-');
           
+          let lotsHtml = '';
+          if (Array.isArray(s.lotes) && s.lotes.length > 0) {
+            const lotsItems = s.lotes.map(l => {
+              const tamanoInfo = l.tamano ? ` <span style="color: var(--text-light); font-size: 11px;">(${escapeHtml(l.tamano)})</span>` : '';
+              const stockNum = Number(l.stock || 0).toLocaleString('es-MX', { minimumFractionDigits: 3 });
+              return `<span class="lot-badge" style="display: inline-flex; align-items: center; background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 12px; margin-right: 8px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);"><strong>${escapeHtml(l.lote)}</strong>${tamanoInfo}&nbsp;-&nbsp;<span style="color: var(--primary); font-weight: 700; margin-left: 2px;">${stockNum}</span></span>`;
+            }).join('');
+
+            lotsHtml = `
+              <tr class="lot-breakdown-row" style="background-color: #f8fafc; border-bottom: 1px solid var(--border);">
+                <td colspan="4" style="padding: 6px 14px 10px 32px;">
+                  <div style="font-size: 11px; color: var(--text-light); margin-bottom: 4px; font-weight: 600;">📦 Lotes que conforman el saldo:</div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center;">
+                    ${lotsItems}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+
           return `
-            <tr ${canAdjustStock ? `onclick="openStockAdjustmentModal(${s.id})" title="Editar existencias físicas de ${prodName}"` : ''} style="${isLow ? 'background-color: #fff5f5;' : ''}${canAdjustStock ? ' cursor: pointer;' : ''}">
+            <tr class="product-stock-row" ${canAdjustStock ? `onclick="openStockAdjustmentModal(${s.id})" title="Editar existencias físicas de ${prodName}"` : ''} style="${isLow ? 'background-color: #fff5f5;' : ''}${canAdjustStock ? ' cursor: pointer;' : ''}">
               <td><strong>${prodName}</strong></td>
               <td>${catName}</td>
               <td style="text-align: right; font-weight: 600; ${isLow ? 'color: var(--danger);' : ''}">${qtyFormatted}</td>
               <td>${statusBadge}</td>
             </tr>
+            ${lotsHtml}
           `;
         }).join('');
       }
@@ -4261,6 +4291,8 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
 
     const precioInput = row.querySelector('.move-item-precio');
     const precioVenta = isSalida ? (Number(precioInput?.value) || 0.0) : 0.0;
+    const cicloInput = row.querySelector('.move-item-ciclo');
+    const cicloManual = isSalida && cicloInput?.value ? cicloInput.value.trim() : null;
 
     items.push({
       producto_id: prodId,
@@ -4268,7 +4300,9 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
       tamano: tamano || null,
       cantidad,
       precio_venta: precioVenta,
-      categoria: isSeed ? 'Semilla' : (prodObj?.tipo_categoria || 'Agroquímicos')
+      categoria: isSeed ? 'Semilla' : (prodObj?.tipo_categoria || 'Agroquímicos'),
+      ciclo: cicloManual,
+      ciclo_agricola: cicloManual
     });
   }
 
@@ -9658,14 +9692,15 @@ function exportKardexToCSV() {
   }
   
   let csvContent = "\uFEFF"; // UTF-8 BOM
-csvContent += "Fecha,Tipo de Movimiento,Producto,Lote,Tamaño,Categoría,Entradas,Salidas,Saldo Resultante,Referencia,Notas,Op. Operación,No. Remisión,No. Movimiento,Precio Venta,Proveedor/Cliente,Cliente,Asesor,Folio Cotización\n";
+  csvContent += "Fecha,Tipo de Movimiento,Producto,Lote,Tamaño,Ciclo,Categoría,Entradas,Salidas,Saldo Resultante,Referencia,Notas,Op. Operación,No. Remisión,No. Movimiento,Precio Venta,Proveedor/Cliente,Cliente,Asesor,Folio Cotización\n";
 
   allMovements.forEach(m => {
-    const date = m.fecha_movimiento.slice(0, 16).replace('T', ' ');
+    const date = (m.fecha_movimiento || '').slice(0, 16).replace('T', ' ');
     const type = `"${(m.tipo_movimiento || '').replace(/"/g, '""')}"`;
     const prod = `"${(m.producto_nombre || '').replace(/"/g, '""')}"`;
     const lote = `"${(m.lote || '').replace(/"/g, '""')}"`;
     const tamano = `"${(m.tamano || '').replace(/"/g, '""')}"`;
+    const ciclo = `"${(m.ciclo_agricola || m.ciclo || '').replace(/"/g, '""')}"`;
     const categoria = `"${(m.categoria || '').replace(/"/g, '""')}"`;
     const ent = m.cantidad_entrante || 0;
     const sal = m.cantidad_saliente || 0;
@@ -9680,7 +9715,7 @@ csvContent += "Fecha,Tipo de Movimiento,Producto,Lote,Tamaño,Categoría,Entrada
     const cliente = `"${(m.cliente_nombre || '').replace(/"/g, '""')}"`;
     const asesor = `"${(m.asesor_nombre || '').replace(/"/g, '""')}"`;
     const folioCot = `"${(m.folio_cotizacion || '').replace(/"/g, '""')}"`;
-    csvContent += `${date},${type},${prod},${lote},${tamano},${categoria},${ent},${sal},${balance},${ref},${notes},${opcionOp},${numRem},${numMov},${precioVenta},${provCli},${cliente},${asesor},${folioCot}\n`;
+    csvContent += `${date},${type},${prod},${lote},${tamano},${ciclo},${categoria},${ent},${sal},${balance},${ref},${notes},${opcionOp},${numRem},${numMov},${precioVenta},${provCli},${cliente},${asesor},${folioCot}\n`;
   });
   
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -9719,6 +9754,7 @@ function exportKardexToPDF() {
         <td><strong>${m.producto_nombre || '-'}</strong></td>
         <td>${m.lote || '-'}</td>
         <td>${m.tamano || '-'}</td>
+        <td>${m.ciclo_agricola || m.ciclo || '-'}</td>
         <td>${m.categoria || '-'}</td>
         <td style="text-align: right;">${ent}</td>
         <td style="text-align: right;">${sal}</td>
@@ -9775,6 +9811,7 @@ function exportKardexToPDF() {
               <th>Producto</th>
               <th>Lote</th>
               <th>Tamaño</th>
+              <th>Ciclo</th>
               <th>Categoría</th>
               <th style="text-align: right;">Entradas</th>
               <th style="text-align: right;">Salidas</th>
