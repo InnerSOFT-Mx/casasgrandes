@@ -86,15 +86,15 @@ test('TDD-TC-108: aggregateProductLotsStock desglosa existencias por lotes activ
   assert.equal(accel.lotes.length, 0);
 });
 
-test('TDD-TC-109: exportKardexToCSV y frontend incorporan Ciclo en Entradas (no en Salidas) y fila de desglose de lotes', () => {
+test('TDD-TC-109: exportKardexToCSV y frontend incorporan Ciclo en Entradas exclusivamente por partida y fila de desglose de lotes', () => {
   const appJsPath = path.join(__dirname, '..', 'public', 'js', 'app.js');
   const appJsContent = fs.readFileSync(appJsPath, 'utf8');
   const indexHtmlPath = path.join(__dirname, '..', 'public', 'index.html');
   const indexHtmlContent = fs.readFileSync(indexHtmlPath, 'utf8');
 
-  // 1. Debe incluir input manual de ciclo para Entradas
-  assert.match(indexHtmlContent, /move-ciclo-entrada/, 'index.html debe contener el campo move-ciclo-entrada en fields-entrada-container');
-  assert.match(appJsContent, /move-item-ciclo/, 'app.js debe contener la clase move-item-ciclo');
+  // 1. Debe incluir input manual de ciclo por renglón/partida (.move-item-ciclo) y NO en la cabecera (move-ciclo-entrada)
+  assert.equal(/id=["']move-ciclo-entrada["']/.test(indexHtmlContent), false, 'index.html no debe contener el campo redundante move-ciclo-entrada en cabecera');
+  assert.match(appJsContent, /move-item-ciclo/, 'app.js debe contener la clase move-item-ciclo en cada partida');
 
   // 2. exportKardexToCSV debe contener la columna Ciclo en su cabecera y en los datos
   assert.match(appJsContent, /Ciclo/, 'exportKardexToCSV debe incluir la columna Ciclo');

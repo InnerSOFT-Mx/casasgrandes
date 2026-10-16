@@ -291,7 +291,7 @@
 - Requisitos cubiertos: PRD-FR-052, PRD-FR-053.
 - Escenarios BDD: BDD-SC-093, BDD-SC-094, BDD-SC-095.
 - Casos TDD: TDD-TC-107, TDD-TC-108, TDD-TC-109.
-- Ajuste de alcance: Reubicación de captura manual de Ciclo de Salidas a Entradas (`#fields-entrada-container` y `.move-item-ciclo-group` en entradas; en salidas se conserva únicamente el precio de venta unitario).
+- Ajuste de alcance: Reubicación de captura manual de Ciclo exclusivamente a nivel de cada partida en Entradas (`.move-item-ciclo-group` en entradas, eliminando el campo global `#move-ciclo-entrada` de la cabecera); preservación del modo de operación al registrar y actualización del versionado de assets (`?v=20261016-chg025`) para evitar retención de caché.
 - Fase Roja: `node --test test/chg024_almacen_ciclos_lotes.test.js`, exit 1.
 - Fase Verde: `node --test test/chg024_almacen_ciclos_lotes.test.js`, exit 0, 3/3 aprobadas.
 - Regresión completa: `npm test`, exit 0, 141/141 pruebas aprobadas (0 fallos).

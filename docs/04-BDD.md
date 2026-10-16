@@ -795,11 +795,12 @@ And la interfaz despliega el selector con la lista completa de asesores
 
 ## Escenarios BDD del Incremento CHG-024
 
-### BDD-SC-093 — Captura manual de Ciclo en entrada y persistencia en base de datos
+### BDD-SC-093 — Captura manual de Ciclo por partida en entrada y persistencia en base de datos
 - **Dado** un usuario con rol autorizado de almacén en el formulario de registro de Entradas
-- **Cuando** registra una entrada de producto capturando lote, cantidad y el campo manual `Ciclo` (ej. "O-I 2026")
-- **Entonces** la solicitud se envía y procesa atómicamente por el backend
+- **Cuando** registra una entrada de producto capturando lote, cantidad y el campo manual `Ciclo` en la partida correspondiente (`.move-item-ciclo`) sin campo redundante en la cabecera
+- **Entonces** la solicitud se envía y procesa atómicamente por el backend asignando a cada partida su respectivo `ciclo_agricola`
 - **Y** la fila insertada en `almacen_movimientos` contiene el valor de `ciclo_agricola` correspondiente
+- **Y** el formulario conserva el modo de operación "Entrada" tras completarse el registro exitoso
 - **Y** en las Salidas dicho campo no se solicita ni se exhibe.
 
 ### BDD-SC-094 — Proyección del Ciclo en Kardex y Exportación Excel (CSV) / PDF

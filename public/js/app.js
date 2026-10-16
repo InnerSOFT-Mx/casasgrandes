@@ -3322,7 +3322,7 @@ function addWarehouseMovementItem() {
 
     <div class="form-group move-item-ciclo-group" style="${!isSalida ? 'display: block;' : 'display: none;'} margin-bottom: 0;">
       <label style="font-size: 12px; margin-bottom: 4px;">Ciclo (Manual)</label>
-      <input type="text" class="form-input move-item-ciclo" placeholder="Ej. O-I 2026" value="${escapeHtml(document.getElementById('move-ciclo-entrada')?.value || '')}">
+      <input type="text" class="form-input move-item-ciclo" placeholder="Ej. O-I 2026" value="">
     </div>
   `;
 
@@ -4291,8 +4291,7 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
     const precioInput = row.querySelector('.move-item-precio');
     const precioVenta = isSalida ? (Number(precioInput?.value) || 0.0) : 0.0;
     const cicloInput = row.querySelector('.move-item-ciclo');
-    const globalCicloEntrada = document.getElementById('move-ciclo-entrada')?.value?.trim();
-    const cicloManual = !isSalida ? ((cicloInput?.value ? cicloInput.value.trim() : '') || globalCicloEntrada || null) : null;
+    const cicloManual = !isSalida ? (cicloInput?.value?.trim() || null) : null;
 
     items.push({
       producto_id: prodId,
@@ -4323,8 +4322,6 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
   } else {
     payload.proveedor_cliente = document.getElementById('move-proveedor')?.value?.trim() || '';
     payload.numero_movimiento = document.getElementById('move-num-entrada')?.value?.trim() || '';
-    payload.ciclo = document.getElementById('move-ciclo-entrada')?.value?.trim() || null;
-    payload.ciclo_agricola = document.getElementById('move-ciclo-entrada')?.value?.trim() || null;
     payload.tipo_movimiento = 'Entrada';
   }
 
@@ -4343,7 +4340,11 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
     document.getElementById('add-movement-form').reset();
     document.getElementById('move-fecha').value = new Date().toISOString().slice(0, 10);
     document.getElementById('cat-btn-all')?.click();
-    document.getElementById('op-btn-salida')?.click();
+    if (isSalida) {
+      document.getElementById('op-btn-salida')?.click();
+    } else {
+      document.getElementById('op-btn-entrada')?.click();
+    }
 
     // Reset items list to 1 single clean row
     initWarehouseMovementItems();

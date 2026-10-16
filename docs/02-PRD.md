@@ -486,18 +486,21 @@ Criterio de aceptación:
 
 ### PRD-FR-052 — Captura Manual de Ciclo en Entradas de Almacén y Reflejo en Kardex y Excel (CSV)
 
-- **Descripción**: El registro de entradas de almacén debe permitir la captura de un campo de texto libre denominado `Ciclo` (en la cabecera de entrada y/o en cada partida de entrada). Dicho dato debe persistirse en la base de datos y proyectarse en el Kardex de movimientos, así como en las exportaciones a CSV (Excel) y PDF.
+- **Descripción**: El registro de entradas de almacén debe permitir la captura de un campo de texto libre denominado `Ciclo` exclusivamente en cada partida de producto de entrada (sin campo global redundante en la cabecera). Dicho dato debe persistirse en la base de datos y proyectarse en el Kardex de movimientos, así como en las exportaciones a CSV (Excel) y PDF. Tras registrar un movimiento, el formulario debe conservar el modo de operación activo (Entrada o Salida).
 - **Regla de Negocio**:
-  - El campo `Ciclo` es exclusivo de los movimientos de **Entrada** y no se solicita en las **Salidas** (las salidas se enfocan en precio de venta unitario y remisión).
-  - El campo `Ciclo` es de entrada manual (no restringido a un catálogo cerrado).
+  - El campo `Ciclo` es exclusivo de los renglones de **Entrada** y no se solicita en las **Salidas** (las salidas se enfocan en precio de venta unitario y remisión).
+  - La cabecera general de Entrada no contiene un campo redundante de `Ciclo`, ubicándose de forma limpia únicamente dentro de cada partida.
+  - El campo `Ciclo` es de entrada manual por partida (no restringido a un catálogo cerrado).
   - Si el usuario no captura nada o deja espacios en blanco, se almacena como `NULL` o cadena vacía sin bloquear el guardado.
-  - La tabla `almacen_movimientos` persiste el valor en la columna `ciclo_agricola`.
+  - La tabla `almacen_movimientos` persiste el valor en la columna `ciclo_agricola` para cada partida registrada.
   - La exportación a Excel (CSV) y PDF debe contener el encabezado `Ciclo` y su valor correspondiente para cada movimiento.
+  - Tras un registro exitoso, el formulario se reinicia pero preserva la selección de operación activa (si era Entrada permanece en Entrada).
 - **Criterios de Aceptación**:
-  - Al seleccionar "Entrada", la interfaz expone el campo de texto manual `Ciclo` (en los campos de entrada y en las partidas).
+  - Al seleccionar "Entrada", la interfaz expone el campo de texto manual `Ciclo` exclusivamente dentro de cada partida (`.move-item-ciclo`), sin campo en la cabecera general.
   - Al seleccionar "Salida", el campo `Ciclo` permanece oculto y no se solicita.
   - Al registrar una entrada con `Ciclo: "O-I 2026"`, el movimiento persiste `ciclo_agricola = "O-I 2026"`.
   - El archivo CSV de descarga incluye la columna `Ciclo` con el valor capturado.
+  - Al completar el registro de una Entrada, la interfaz permanece en modo "Entrada".
 
 ### PRD-FR-053 — Desglose de Existencias Físicas por Lotes en el Inventario de Almacén
 
