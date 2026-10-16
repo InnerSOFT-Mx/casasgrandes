@@ -3315,15 +3315,14 @@ function addWarehouseMovementItem() {
       </div>
     </div>
 
-    <div class="move-item-bottom-grid" style="${isSalida ? 'display: grid;' : 'display: none;'} grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0;">
-      <div class="form-group move-item-precio-group" style="margin-bottom: 0;">
-        <label style="font-size: 12px; margin-bottom: 4px;">Precio Venta Unitario (MXN)</label>
-        <input type="number" step="any" min="0" class="form-input move-item-precio" placeholder="0.00">
-      </div>
-      <div class="form-group move-item-ciclo-group" style="margin-bottom: 0;">
-        <label style="font-size: 12px; margin-bottom: 4px;">Ciclo (Manual)</label>
-        <input type="text" class="form-input move-item-ciclo" placeholder="Ej. O-I 2026">
-      </div>
+    <div class="form-group move-item-precio-group" style="${isSalida ? 'display: block;' : 'display: none;'} margin-bottom: 0;">
+      <label style="font-size: 12px; margin-bottom: 4px;">Precio Venta Unitario (MXN)</label>
+      <input type="number" step="any" min="0" class="form-input move-item-precio" placeholder="0.00">
+    </div>
+
+    <div class="form-group move-item-ciclo-group" style="${!isSalida ? 'display: block;' : 'display: none;'} margin-bottom: 0;">
+      <label style="font-size: 12px; margin-bottom: 4px;">Ciclo (Manual)</label>
+      <input type="text" class="form-input move-item-ciclo" placeholder="Ej. O-I 2026" value="${escapeHtml(document.getElementById('move-ciclo-entrada')?.value || '')}">
     </div>
   `;
 
@@ -3563,10 +3562,10 @@ function setupWarehouseFormHandlers() {
     // Update item rows for salida vs entrada (lots, price and ciclo)
     document.querySelectorAll('#movement-items-list .movement-item-row').forEach(row => {
       const isSalida = op === 'Salida';
-      const bottomGrid = row.querySelector('.move-item-bottom-grid');
-      if (bottomGrid) bottomGrid.style.display = isSalida ? 'grid' : 'none';
       const precioGroup = row.querySelector('.move-item-precio-group');
-      if (precioGroup && !bottomGrid) precioGroup.style.display = isSalida ? 'block' : 'none';
+      if (precioGroup) precioGroup.style.display = isSalida ? 'block' : 'none';
+      const cicloGroup = row.querySelector('.move-item-ciclo-group');
+      if (cicloGroup) cicloGroup.style.display = isSalida ? 'none' : 'block';
       updateMovementItemLots(row);
     });
   };
@@ -3977,11 +3976,11 @@ function renderWarehouseMovements(movements) {
     if (isEntry) {
       if (m.proveedor_cliente) contactDetails += `<span>Prov/Cli: ${escapeHtml(m.proveedor_cliente)}</span>`;
       if (m.numero_movimiento) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; color: var(--text-light);">N° Ent: ${escapeHtml(m.numero_movimiento)}</span>`;
+      if (m.ciclo_agricola) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; color: var(--text-dark); background: #e0f2fe; padding: 1px 5px; border-radius: 4px; font-weight: 600;">Ciclo: ${escapeHtml(m.ciclo_agricola)}</span>`;
     } else {
       if (m.cliente_nombre) contactDetails += `<span>Cliente: ${escapeHtml(m.cliente_nombre)}</span>`;
       if (m.asesor_nombre) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; color: var(--text-light);">Asesor: ${escapeHtml(m.asesor_nombre)}</span>`;
       if (m.numero_remision) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; color: var(--primary);">Remisión: ${escapeHtml(m.numero_remision)}</span>`;
-      if (m.ciclo_agricola) contactDetails += `<span style="font-size: 11px; color: var(--text-dark); background: #e0f2fe; padding: 1px 5px; border-radius: 4px; margin-left: 4px; font-weight: 600;">Ciclo: ${escapeHtml(m.ciclo_agricola)}</span>`;
       if (m.opcion_operacion) contactDetails += `<span style="font-size: 11px; color: var(--text-light); margin-left: 4px;">(${escapeHtml(m.opcion_operacion)})</span>`;
       if (m.precio_venta > 0) contactDetails += `${contactDetails ? '<br>' : ''}<span style="font-size: 11px; font-weight: 600;">$${Number(m.precio_venta).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>`;
     }
@@ -4292,7 +4291,8 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
     const precioInput = row.querySelector('.move-item-precio');
     const precioVenta = isSalida ? (Number(precioInput?.value) || 0.0) : 0.0;
     const cicloInput = row.querySelector('.move-item-ciclo');
-    const cicloManual = isSalida && cicloInput?.value ? cicloInput.value.trim() : null;
+    const globalCicloEntrada = document.getElementById('move-ciclo-entrada')?.value?.trim();
+    const cicloManual = !isSalida ? ((cicloInput?.value ? cicloInput.value.trim() : '') || globalCicloEntrada || null) : null;
 
     items.push({
       producto_id: prodId,
@@ -4323,6 +4323,8 @@ document.getElementById('add-movement-form').addEventListener('submit', async (e
   } else {
     payload.proveedor_cliente = document.getElementById('move-proveedor')?.value?.trim() || '';
     payload.numero_movimiento = document.getElementById('move-num-entrada')?.value?.trim() || '';
+    payload.ciclo = document.getElementById('move-ciclo-entrada')?.value?.trim() || null;
+    payload.ciclo_agricola = document.getElementById('move-ciclo-entrada')?.value?.trim() || null;
     payload.tipo_movimiento = 'Entrada';
   }
 

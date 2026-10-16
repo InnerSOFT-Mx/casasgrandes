@@ -482,19 +482,21 @@ Criterio de aceptación:
   - Ningún control interactivo de mutación está presente en la vista del Observador.
   - Cualquier petición HTTP mutativa sobre planificación enviada con un token de `Observador` es bloqueada con HTTP 403 Forbidden.
 
-## Requisitos del Incremento CHG-024 (Ciclos Manuales en Salidas y Desglose de Existencias por Lote)
+## Requisitos del Incremento CHG-024 (Ciclos Manuales en Entradas y Desglose de Existencias por Lote)
 
-### PRD-FR-052 — Captura Manual de Ciclo en Salidas de Almacén y Reflejo en Kardex y Excel (CSV)
+### PRD-FR-052 — Captura Manual de Ciclo en Entradas de Almacén y Reflejo en Kardex y Excel (CSV)
 
-- **Descripción**: Cada partida en el registro de salidas de almacén debe permitir la captura de un campo de texto libre denominado `Ciclo` (ubicado a la derecha de *Precio Venta Unitario* en el formulario de la partida). Dicho dato debe persistirse en la base de datos y proyectarse en el Kardex de movimientos, así como en las exportaciones a CSV (Excel) y PDF.
+- **Descripción**: El registro de entradas de almacén debe permitir la captura de un campo de texto libre denominado `Ciclo` (en la cabecera de entrada y/o en cada partida de entrada). Dicho dato debe persistirse en la base de datos y proyectarse en el Kardex de movimientos, así como en las exportaciones a CSV (Excel) y PDF.
 - **Regla de Negocio**:
+  - El campo `Ciclo` es exclusivo de los movimientos de **Entrada** y no se solicita en las **Salidas** (las salidas se enfocan en precio de venta unitario y remisión).
   - El campo `Ciclo` es de entrada manual (no restringido a un catálogo cerrado).
   - Si el usuario no captura nada o deja espacios en blanco, se almacena como `NULL` o cadena vacía sin bloquear el guardado.
   - La tabla `almacen_movimientos` persiste el valor en la columna `ciclo_agricola`.
   - La exportación a Excel (CSV) y PDF debe contener el encabezado `Ciclo` y su valor correspondiente para cada movimiento.
 - **Criterios de Aceptación**:
-  - El formulario de partidas de salida incluye el campo de texto manual `Ciclo` junto a `Precio Venta Unitario`.
-  - Al enviar una salida con `Ciclo: "O-I 2026"`, el movimiento persiste `ciclo_agricola = "O-I 2026"`.
+  - Al seleccionar "Entrada", la interfaz expone el campo de texto manual `Ciclo` (en los campos de entrada y en las partidas).
+  - Al seleccionar "Salida", el campo `Ciclo` permanece oculto y no se solicita.
+  - Al registrar una entrada con `Ciclo: "O-I 2026"`, el movimiento persiste `ciclo_agricola = "O-I 2026"`.
   - El archivo CSV de descarga incluye la columna `Ciclo` con el valor capturado.
 
 ### PRD-FR-053 — Desglose de Existencias Físicas por Lotes en el Inventario de Almacén

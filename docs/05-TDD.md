@@ -655,8 +655,9 @@
 - Cubre: BDD-SC-094, BDD-SC-095, PRD-FR-052, PRD-FR-053
 - Aserciones:
   1. `exportKardexToCSV` genera la cabecera "Ciclo" y proyecta el valor `ciclo_agricola` en las filas exportadas.
-  2. `addWarehouseMovementItem` genera el input `.move-item-ciclo` en la misma fila junto a `.move-item-precio`.
+  2. `addWarehouseMovementItem` y `updateOperationUI` exponen el campo `.move-item-ciclo` exclusivamente al seleccionar Entrada y lo ocultan en Salida.
   3. La tabla de existencias genera la fila secundaria con `.lot-breakdown-row` para productos con saldo positivo.
 - Estado: passed-local
+
 
 

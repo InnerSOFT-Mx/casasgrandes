@@ -286,12 +286,14 @@
 
 ## EVD-022 — Evidencia local CHG-024
 
-- Fecha: 2026-10-14.
-- Calibración: Riesgo R2 (Ciclos manuales en salidas de almacén y desglose de existencias por lote).
+- Fecha: 2026-10-15.
+- Calibración: Riesgo R2 (Ciclos manuales en entradas de almacén y desglose de existencias por lote).
 - Requisitos cubiertos: PRD-FR-052, PRD-FR-053.
 - Escenarios BDD: BDD-SC-093, BDD-SC-094, BDD-SC-095.
 - Casos TDD: TDD-TC-107, TDD-TC-108, TDD-TC-109.
+- Ajuste de alcance: Reubicación de captura manual de Ciclo de Salidas a Entradas (`#fields-entrada-container` y `.move-item-ciclo-group` en entradas; en salidas se conserva únicamente el precio de venta unitario).
 - Fase Roja: `node --test test/chg024_almacen_ciclos_lotes.test.js`, exit 1.
 - Fase Verde: `node --test test/chg024_almacen_ciclos_lotes.test.js`, exit 0, 3/3 aprobadas.
 - Regresión completa: `npm test`, exit 0, 141/141 pruebas aprobadas (0 fallos).
+
 
